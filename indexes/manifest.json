@@ -1,0 +1,7 @@
+{
+  "store_type": "ChromaDB",
+  "embedding_model": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+  "chunk_size": 800,
+  "chunk_overlap": 100,
+  "built_at": 1760556351.9953024
+}
