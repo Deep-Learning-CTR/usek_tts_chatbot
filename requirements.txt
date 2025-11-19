@@ -15,8 +15,6 @@ sentence-transformers==2.2.2
 urllib3==2.0.7
 certifi==2023.7.22
 torch
-torchvision
-torchaudio
 streamlit-audiorecorder
 cerebras-cloud-sdk
 openai-whisper
