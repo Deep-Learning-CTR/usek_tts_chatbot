@@ -219,12 +219,18 @@ for idx, msg in enumerate(st.session_state.messages):
 
         # Sources for assistant messages (NEW FEATURE)
         if msg["role"] == "assistant" and "sources" in msg:
-            urls = list({s["source"] for s in msg["sources"] if s["source"]})
+            # Create a mapping of URLs to titles for better display
+            url_to_info = {}
+            for s in msg["sources"]:
+                url = s.get("source", "")
+                if url and url not in url_to_info:
+                    title = s.get("title", "").strip()
+                    url_to_info[url] = title if title else url.split("/")[-1] or "Source"
 
-            if urls:
+            if url_to_info:
                 st.markdown("### 🔗 Sources Used")
-                for u in urls:
-                    st.markdown(f"- [{u}]({u})")
+                for url, display_text in url_to_info.items():
+                    st.markdown(f"- [{display_text}]({url})")
 
 
 
@@ -289,11 +295,18 @@ if (
             st.audio(open(audio_path, "rb").read(), format="audio/wav")
 
         # Display sources (NEW)
-        urls = list({s["source"] for s in sources_collected if s["source"]})
-        if urls:
+        # Create a mapping of URLs to titles for better display
+        url_to_info = {}
+        for s in sources_collected:
+            url = s.get("source", "")
+            if url and url not in url_to_info:
+                title = s.get("title", "").strip()
+                url_to_info[url] = title if title else url.split("/")[-1] or "Source"
+        
+        if url_to_info:
             st.markdown("### 🔗 Sources Used")
-            for u in urls:
-                st.markdown(f"- [{u}]({u})")
+            for url, display_text in url_to_info.items():
+                st.markdown(f"- [{display_text}]({url})")
 
     st.rerun()
 
