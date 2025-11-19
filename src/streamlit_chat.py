@@ -1,4 +1,5 @@
 import os
+import re
 import streamlit as st
 import requests
 from pathlib import Path
@@ -92,6 +93,9 @@ Your job:
 - Use the provided context **as the main knowledge source**
 - If the context is incomplete or partially relevant, combine it with general knowledge
 - Provide a full, detailed answer
+- **IMPORTANT**: When using information from the context, cite the source by adding [1], [2], [3], etc. after the relevant statement
+- The context chunks are numbered [1], [2], [3], etc. Use these numbers to cite your sources
+- Add citations throughout your answer whenever you reference specific information from the context
 
 CONTEXT:
 {context}
@@ -99,7 +103,7 @@ CONTEXT:
 USER QUESTION:
 {prompt}
 
-FULL ANSWER:
+FULL ANSWER (remember to cite sources with [1], [2], etc.):
 """
 
     try:
@@ -115,6 +119,45 @@ FULL ANSWER:
         return f"[CEREBRAS ERROR]: {e}"
 
 
+# -----------------------------------------
+# CITATION CONVERSION
+# -----------------------------------------
+def convert_citations_to_links(text, sources):
+    """
+    Convert citation markers [1], [2], etc. to clickable hyperlinks.
+    
+    Args:
+        text: The response text with citation markers like [1], [2]
+        sources: List of source dictionaries with 'source' URL and 'title' fields
+    
+    Returns:
+        Text with citations converted to markdown hyperlinks
+    """
+    # Create a mapping of citation numbers to source info
+    citation_map = {}
+    for idx, source in enumerate(sources, start=1):
+        url = source.get("source", "")
+        title = source.get("title", "").strip()
+        
+        if url:
+            # Use title if available, otherwise use filename from URL
+            display_text = title if title else url.split("/")[-1] or f"Source {idx}"
+            citation_map[idx] = (url, display_text)
+    
+    # Find all citation markers like [1], [2], [3] in the text
+    def replace_citation(match):
+        num = int(match.group(1))
+        if num in citation_map:
+            url, display_text = citation_map[num]
+            # Create a clickable superscript-style link
+            return f"[[{num}]]({url} '{display_text}')"
+        return match.group(0)  # Return original if not found
+    
+    # Replace [1], [2], etc. with markdown links
+    # Match [digit] pattern
+    result = re.sub(r'\[(\d+)\]', replace_citation, text)
+    
+    return result
 
 
 # -----------------------------------------
@@ -209,7 +252,12 @@ prompt = spoken_text if spoken_text else typed_text
 # -----------------------------------------
 for idx, msg in enumerate(st.session_state.messages):
     with st.chat_message(msg["role"]):
-        st.markdown(msg["content"])
+        # Convert citations to clickable links for assistant messages
+        if msg["role"] == "assistant" and "sources" in msg:
+            display_content = convert_citations_to_links(msg["content"], msg["sources"])
+            st.markdown(display_content)
+        else:
+            st.markdown(msg["content"])
 
         # Speak button
         if msg["role"] == "assistant":
@@ -219,12 +267,18 @@ for idx, msg in enumerate(st.session_state.messages):
 
         # Sources for assistant messages (NEW FEATURE)
         if msg["role"] == "assistant" and "sources" in msg:
-            urls = list({s["source"] for s in msg["sources"] if s["source"]})
+            # Create a mapping of URLs to titles for better display
+            url_to_info = {}
+            for s in msg["sources"]:
+                url = s.get("source", "")
+                if url and url not in url_to_info:
+                    title = s.get("title", "").strip()
+                    url_to_info[url] = title if title else url.split("/")[-1] or "Source"
 
-            if urls:
+            if url_to_info:
                 st.markdown("### 🔗 Sources Used")
-                for u in urls:
-                    st.markdown(f"- [{u}]({u})")
+                for url, display_text in url_to_info.items():
+                    st.markdown(f"- [{display_text}]({url})")
 
 
 
@@ -281,7 +335,9 @@ if (
 
     # Display bot answer
     with st.chat_message("assistant"):
-        st.markdown(answer)
+        # Convert citations to clickable links
+        display_answer = convert_citations_to_links(answer, sources_collected)
+        st.markdown(display_answer)
 
         # Speak button (live)
         if st.button("🔊 Speak", key=f"speak_new_{datetime.now().timestamp()}"):
@@ -289,11 +345,18 @@ if (
             st.audio(open(audio_path, "rb").read(), format="audio/wav")
 
         # Display sources (NEW)
-        urls = list({s["source"] for s in sources_collected if s["source"]})
-        if urls:
+        # Create a mapping of URLs to titles for better display
+        url_to_info = {}
+        for s in sources_collected:
+            url = s.get("source", "")
+            if url and url not in url_to_info:
+                title = s.get("title", "").strip()
+                url_to_info[url] = title if title else url.split("/")[-1] or "Source"
+        
+        if url_to_info:
             st.markdown("### 🔗 Sources Used")
-            for u in urls:
-                st.markdown(f"- [{u}]({u})")
+            for url, display_text in url_to_info.items():
+                st.markdown(f"- [{display_text}]({url})")
 
     st.rerun()
 
