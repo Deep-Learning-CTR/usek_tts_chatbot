@@ -1,0 +1,151 @@
+:root {
+    --bg-color: #000000;
+    --text-color: #ffffff;
+    --accent-color: #ffffff;
+    --orb-idle: #333333;
+    --orb-listening: #ffffff;
+    --orb-speaking: #00ff88;
+    --orb-thinking: #0088ff;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    font-family: 'Inter', sans-serif;
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.container {
+    width: 100%;
+    max-width: 600px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    padding: 2rem;
+    box-sizing: border-box;
+}
+
+/* Status Bar */
+.status-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.9rem;
+    opacity: 0.7;
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: #333;
+}
+
+.status-dot.connected { background-color: #00ff88; }
+.status-dot.disconnected { background-color: #ff3333; }
+
+/* Orb Visualizer */
+.visualizer-container {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+}
+
+.orb {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: var(--orb-idle);
+    transition: all 0.3s ease;
+    box-shadow: 0 0 30px rgba(255, 255, 255, 0.1);
+}
+
+.orb.listening { background: var(--orb-listening); box-shadow: 0 0 50px rgba(255, 255, 255, 0.3); }
+.orb.recording { background: #ff3333; transform: scale(1.1); }
+.orb.thinking { 
+    background: var(--orb-thinking);
+    animation: pulse 1.5s infinite;
+}
+.orb.speaking { 
+    background: var(--orb-speaking);
+    box-shadow: 0 0 60px rgba(0, 255, 136, 0.4);
+}
+
+@keyframes pulse {
+    0% { transform: scale(0.95); opacity: 0.8; }
+    50% { transform: scale(1.05); opacity: 1; }
+    100% { transform: scale(0.95); opacity: 0.8; }
+}
+
+/* Transcript */
+.transcript-container {
+    width: 100%;
+    height: 150px;
+    margin-bottom: 2rem;
+    mask-image: linear-gradient(to bottom, transparent, black 20%, black 80%, transparent);
+}
+
+.transcript-box {
+    height: 100%;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 1rem;
+}
+
+.transcript-box::-webkit-scrollbar { display: none; }
+
+.message {
+    font-size: 1rem;
+    line-height: 1.5;
+    opacity: 0.8;
+    text-align: center;
+}
+
+.message.user { color: #aaaaaa; }
+.message.assistant { color: #ffffff; font-weight: 500; }
+.message.system { font-size: 0.8rem; opacity: 0.5; font-style: italic; }
+
+/* Controls */
+.controls {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 2rem;
+}
+
+.control-btn {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: transform 0.2s;
+}
+
+.control-btn:active { transform: scale(0.95); }
+
+.control-btn.call {
+    background-color: #ffffff;
+    color: #000000;
+}
+
+.control-btn.hangup {
+    background-color: #ff3333;
+    color: #ffffff;
+}
+
+.hidden { display: none !important; }

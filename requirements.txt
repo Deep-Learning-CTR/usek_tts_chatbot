@@ -27,3 +27,7 @@ langchain-community
 langchain-core
 pytesseract
 camelot-py[cv]
+flask
+flask-socketio
+python-socketio
+eventlet
