@@ -1,1 +1,11 @@
 .env
+venv
+
+#Ignore vscode AI rules
+.github\instructions\codacy.instructions.md
+.github/instructions/codacy.instructions.md
+src/__pycache__/document_downloader.cpython-311.pyc
+src/__pycache__/document_downloader.cpython-311.pyc
+src/__pycache__/extractors_simple.cpython-311.pyc
+src/__pycache__/integrated_pipeline.cpython-311.pyc
+src/__pycache__/vector_db.cpython-311.pyc

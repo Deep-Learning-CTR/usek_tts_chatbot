@@ -43,6 +43,12 @@ if "last_processed_prompt" not in st.session_state:
 if "last_sources" not in st.session_state:
     st.session_state.last_sources = []
 
+if "pending_transcription" not in st.session_state:
+    st.session_state.pending_transcription = None
+
+if "input_counter" not in st.session_state:
+    st.session_state.input_counter = 0
+
 # -----------------------------------------
 # INIT PIPELINE
 # -----------------------------------------
@@ -178,33 +184,6 @@ st.caption("Ask via text OR voice. Full history + improved answers.")
 
 
 # -----------------------------------------
-# VOICE RECORDING
-# -----------------------------------------
-st.subheader("🎙 Voice Input")
-
-audio = audiorecorder("🎤 Start Recording", "⏹ Stop")
-spoken_text = None
-
-if len(audio) > 0:
-    wav_bytes = audio.export(format="wav").read()
-
-    with st.spinner("Transcribing..."):
-        spoken_text = convert_audio_to_text(wav_bytes)
-
-    st.success(f"🗣 You said: **{spoken_text}**")
-
-
-
-# -----------------------------------------
-# TEXT INPUT ALWAYS AVAILABLE
-# -----------------------------------------
-typed_text = st.chat_input("Type here...")
-
-prompt = spoken_text if spoken_text else typed_text
-
-
-
-# -----------------------------------------
 # DISPLAY CHAT HISTORY
 # -----------------------------------------
 for idx, msg in enumerate(st.session_state.messages):
@@ -225,6 +204,73 @@ for idx, msg in enumerate(st.session_state.messages):
                 st.markdown("### 🔗 Sources Used")
                 for u in urls:
                     st.markdown(f"- [{u}]({u})")
+
+
+
+# -----------------------------------------
+# INPUT SECTION (BELOW CHAT)
+# -----------------------------------------
+st.markdown("---")
+
+# Single row: [Input field] [Mic button]
+col_input, col_voice = st.columns([9.5, 0.5])
+
+with col_voice:
+    audio = audiorecorder("🎤", "⏹️")
+
+# Process audio transcription
+if len(audio) > 0:
+    # Check if this is new audio by comparing with last processed
+    audio_bytes = audio.export(format="wav").read()
+
+    # Create a simple hash to detect new recordings
+    import hashlib
+    audio_hash = hashlib.md5(audio_bytes).hexdigest()
+
+    if "last_audio_hash" not in st.session_state:
+        st.session_state.last_audio_hash = None
+
+    # Only transcribe if it's a new recording
+    if st.session_state.last_audio_hash != audio_hash:
+        with st.spinner("🎤 Transcribing your voice..."):
+            transcribed = convert_audio_to_text(audio_bytes)
+            st.session_state.pending_transcription = transcribed
+            st.session_state.last_audio_hash = audio_hash
+        st.rerun()
+
+# Chat input (with transcription if available)
+prompt = None
+with col_input:
+    # If we have a pending transcription, show it in a form
+    # If we have a pending transcription, show it in a cleaner UI
+    if st.session_state.pending_transcription:
+        col_text, col_btn = st.columns([8, 1])
+
+        def submit_transcription():
+            st.session_state.submit_voice = True
+
+        with col_text:
+            user_input = st.text_input(
+                "Message",
+                value=st.session_state.pending_transcription,
+                label_visibility="collapsed",
+                key="transcribed_input",
+                on_change=submit_transcription
+            )
+
+        with col_btn:
+            send_clicked = st.button("➤", on_click=submit_transcription, use_container_width=True)
+
+        if st.session_state.get("submit_voice", False):
+            prompt = user_input
+            st.session_state.pending_transcription = None
+            st.session_state.last_audio_hash = None
+            st.session_state.submit_voice = False
+    else:
+        # Normal chat input for typing
+        prompt = st.chat_input("💬 Type your question here...")
+        if prompt:
+            st.session_state.last_audio_hash = None
 
 
 
