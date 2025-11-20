@@ -49,6 +49,9 @@ if "pending_transcription" not in st.session_state:
 if "input_counter" not in st.session_state:
     st.session_state.input_counter = 0
 
+if "audio_key" not in st.session_state:
+    st.session_state.audio_key = 0
+
 # -----------------------------------------
 # INIT PIPELINE
 # -----------------------------------------
@@ -208,6 +211,24 @@ for idx, msg in enumerate(st.session_state.messages):
 
 
 # -----------------------------------------
+# SHOW RETRIEVED CHUNKS (EXPANDER) - MOVED UP
+# -----------------------------------------
+if st.session_state.last_sources:
+    with st.expander("📚 Retrieved Chunks (Top 5)", expanded=False):
+        for i, src in enumerate(st.session_state.last_sources[:5], start=1):
+            st.markdown(f"### Chunk {i}")
+            st.markdown(f"**Score:** {src['score']:.4f}")
+            st.markdown(f"**Title:** {src['title']}")
+            st.markdown(f"**Source URL:** {src['source']}")
+            st.text_area(
+                label=f"Chunk_{i}_{datetime.now().timestamp()}",
+                value=src["content"],
+                height=140,
+                disabled=True
+            )
+            st.markdown("---")
+
+# -----------------------------------------
 # INPUT SECTION (BELOW CHAT)
 # -----------------------------------------
 st.markdown("---")
@@ -216,7 +237,7 @@ st.markdown("---")
 col_input, col_voice = st.columns([9.5, 0.5])
 
 with col_voice:
-    audio = audiorecorder("🎤", "⏹️")
+    audio = audiorecorder("🎤", "⏹️", key=f"audio_{st.session_state.audio_key}")
 
 # Process audio transcription
 if len(audio) > 0:
@@ -266,11 +287,13 @@ with col_input:
             st.session_state.pending_transcription = None
             st.session_state.last_audio_hash = None
             st.session_state.submit_voice = False
+            st.session_state.audio_key += 1  # Reset audio recorder
     else:
         # Normal chat input for typing
         prompt = st.chat_input("💬 Type your question here...")
         if prompt:
             st.session_state.last_audio_hash = None
+            st.session_state.audio_key += 1  # Reset audio recorder
 
 
 
@@ -345,20 +368,4 @@ if (
 
 
 
-# -----------------------------------------
-# SHOW RETRIEVED CHUNKS (EXPANDER)
-# -----------------------------------------
-if st.session_state.last_sources:
-    with st.expander("📚 Retrieved Chunks (Top 5)", expanded=False):
-        for i, src in enumerate(st.session_state.last_sources[:5], start=1):
-            st.markdown(f"### Chunk {i}")
-            st.markdown(f"**Score:** {src['score']:.4f}")
-            st.markdown(f"**Title:** {src['title']}")
-            st.markdown(f"**Source URL:** {src['source']}")
-            st.text_area(
-                label=f"Chunk_{i}_{datetime.now().timestamp()}",
-                value=src["content"],
-                height=140,
-                disabled=True
-            )
-            st.markdown("---")
+
